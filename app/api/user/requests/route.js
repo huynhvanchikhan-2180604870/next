@@ -26,7 +26,10 @@ export async function POST(request) {
 
     const newRequest = new Request({
       userId: auth.user._id,
-      names: names.map(name => ({ fullName: name.trim() })),
+      names: names.map((name, index) => ({
+        index: typeof name === 'object' ? name.index : index + 1,
+        fullName: typeof name === 'object' ? name.fullName : name.trim()
+      })),
       submissionType,
       fileName
     });

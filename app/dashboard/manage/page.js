@@ -214,7 +214,28 @@ export default function ManagePage() {
                             <div className="flex items-center justify-between mb-2">
                               <h4 className="font-medium text-green-800">Kết quả xử lý:</h4>
                               <GlassButton
-                                onClick={() => window.open(`/api/user/download?requestId=${request._id}`)}
+                                onClick={async () => {
+                                  const token = localStorage.getItem('token');
+                                  const link = document.createElement('a');
+                                  link.href = `/api/user/download?requestId=${request._id}`;
+                                  link.download = `ket-qua-${request._id}.xlsx`;
+                                  
+                                  // Add auth header by fetching first
+                                  try {
+                                    const response = await fetch(`/api/user/download?requestId=${request._id}`, {
+                                      headers: { 'Authorization': `Bearer ${token}` }
+                                    });
+                                    if (response.ok) {
+                                      const blob = await response.blob();
+                                      const url = window.URL.createObjectURL(blob);
+                                      link.href = url;
+                                      link.click();
+                                      window.URL.revokeObjectURL(url);
+                                    }
+                                  } catch (error) {
+                                    alert('Lỗi tải file');
+                                  }
+                                }}
                                 variant="success"
                                 className="text-xs px-3 py-1"
                               >
@@ -278,15 +299,19 @@ export default function ManagePage() {
                 </div>
 
                 <div className="max-h-64 overflow-y-auto space-y-1">
-                  {processedNames.map((name, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-2 bg-white/5 rounded text-sm"
-                    >
-                      <span>{name}</span>
-                      <span className="text-gray-500">#{index + 1}</span>
-                    </div>
-                  ))}
+                  {processedNames.map((name, index) => {
+                    const displayName = typeof name === 'object' ? name.fullName : name;
+                    const displayIndex = typeof name === 'object' ? name.index : index + 1;
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-2 bg-white/5 rounded text-sm"
+                      >
+                        <span>{displayName}</span>
+                        <span className="text-gray-500">#{displayIndex}</span>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <GlassButton
