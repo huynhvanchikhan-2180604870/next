@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Liquid Glass Base Styles */
+@layer base {
+  body {
+    @apply bg-gradient-to-br from-blue-50 via-white to-purple-50 text-gray-900;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+/* Liquid Glass Components */
+@layer components {
+  .glass-card {
+    @apply bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl shadow-xl;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  }
+  
+  .glass-button {
+    @apply bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-6 py-3 text-white font-medium transition-all duration-300 hover:bg-white/20 hover:scale-105;
+  }
+  
+  .glass-input {
+    @apply bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-3 text-gray-800 placeholder-gray-500 focus:bg-white/20 focus:border-white/40 transition-all duration-300;
+  }
+  
+  .liquid-bg {
+    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+    background-size: 400% 400%;
+    animation: liquidGradient 15s ease infinite;
+  }
+  
+  .liquid-bubble {
+    @apply absolute rounded-full opacity-70;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+    backdrop-filter: blur(10px);
+    animation: liquidFloat 8s ease-in-out infinite;
+  }
+  
+  .glass-nav {
+    @apply fixed top-0 left-0 right-0 z-50 bg-white/10 backdrop-blur-lg border-b border-white/20;
+  }
+  
+  .status-pending {
+    @apply bg-yellow-100/80 text-yellow-800 border border-yellow-200/50 backdrop-blur-sm;
+  }
+  
+  .status-processing {
+    @apply bg-blue-100/80 text-blue-800 border border-blue-200/50 backdrop-blur-sm;
+  }
+  
+  .status-completed {
+    @apply bg-green-100/80 text-green-800 border border-green-200/50 backdrop-blur-sm;
+  }
+  
+  .status-rejected {
+    @apply bg-red-100/80 text-red-800 border border-red-200/50 backdrop-blur-sm;
+  }
+}
+
+/* Liquid Glass Animations */
+@keyframes liquidGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes liquidFloat {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-30px) rotate(120deg); }
+  66% { transform: translateY(-15px) rotate(240deg); }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-white/10 rounded-full;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-white/30 rounded-full hover:bg-white/50;
+}

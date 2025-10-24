@@ -1,0 +1,324 @@
+"use client";
+import { motion } from "framer-motion";
+import {
+  AlertCircle,
+  Building,
+  CheckCircle,
+  Clock,
+  CreditCard,
+  DollarSign,
+  User,
+  Wallet,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import GlassButton from "../../../components/ui/GlassButton";
+import GlassCard from "../../../components/ui/GlassCard";
+import GlassInput from "../../../components/ui/GlassInput";
+import { useAuth } from "../../../context/AuthContext";
+import { useApi } from "../../../hooks/useApi";
+
+export default function WithdrawPage() {
+  const { user } = useAuth();
+  const { post, get, loading } = useApi();
+  const [formData, setFormData] = useState({
+    amount: "",
+    bankName: "",
+    accountNumber: "",
+    accountName: "",
+  });
+  const [errors, setErrors] = useState({});
+  const [withdrawHistory, setWithdrawHistory] = useState([]);
+
+  useEffect(() => {
+    fetchWithdrawHistory();
+  }, []);
+
+  const fetchWithdrawHistory = async () => {
+    try {
+      const response = await get("/api/user/withdraw");
+      setWithdrawHistory(response.withdraws || []);
+    } catch (error) {
+      console.error("Error fetching withdraw history:", error);
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.amount || formData.amount < 100) {
+      newErrors.amount = "Số gạch rút tối thiểu là 100 gạch";
+    }
+
+    if (formData.amount > user?.balance) {
+      newErrors.amount = "Số gạchch không đủ";
+    }
+
+    if (!formData.bankName.trim()) {
+      newErrors.bankName = "Vui lòng nhập tên ngân hàng";
+    }
+
+    if (!formData.accountNumber.trim()) {
+      newErrors.accountNumber = "Vui lòng nhập số tài khoản";
+    }
+
+    if (!formData.accountName.trim()) {
+      newErrors.accountName = "Vui lòng nhập tên chủ tài khoản";
+    }
+
+    return newErrors;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErrors({});
+
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    try {
+      await post("/api/user/withdraw", {
+        amount: parseInt(formData.amount),
+        bankInfo: {
+          bankName: formData.bankName,
+          accountNumber: formData.accountNumber,
+          accountName: formData.accountName,
+        },
+      });
+
+      alert("Yêu cầu rút gạch đã được gửi thành công!");
+      setFormData({
+        amount: "",
+        bankName: "",
+        accountNumber: "",
+        accountName: "",
+      });
+      fetchWithdrawHistory();
+    } catch (error) {
+      setErrors({ general: error.message });
+    }
+  };
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "pending":
+        return <Clock className="w-4 h-4 text-yellow-600" />;
+      case "processing":
+        return (
+          <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        );
+      case "completed":
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
+      case "rejected":
+        return <AlertCircle className="w-4 h-4 text-red-600" />;
+      default:
+        return null;
+    }
+  };
+
+  const getStatusText = (status) => {
+    const statusMap = {
+      pending: "Chờ xử lý",
+      processing: "Đang xử lý",
+      completed: "Hoàn thành",
+      rejected: "Từ chối",
+    };
+    return statusMap[status] || status;
+  };
+
+  return (
+    <div className="container mx-auto px-6 py-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-8"
+      >
+        <h1 className="text-3xl font-bold text-white mb-2">Rút gạch</h1>
+        <p className="text-white/80">
+          Tạo yêu cầu rút gạch về tài khoản ngân hàng
+        </p>
+      </motion.div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Withdraw Form */}
+        <div>
+          <GlassCard>
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="p-3 bg-green-500/20 rounded-xl">
+                <Wallet className="w-6 h-6 text-green-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-800">
+                  Tạo yêu cầu rút gạch
+                </h2>
+                <p className="text-sm text-gray-600">
+                  Số gạchch hiện tại:{" "}
+                  <span className="font-medium text-green-600">
+                    {user?.balance?.toLocaleString() || 0} gạch
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <GlassInput
+                  type="number"
+                  name="amount"
+                  label="Số gạch rút"
+                  placeholder="Nhập số gạch muốn rút"
+                  value={formData.amount}
+                  onChange={handleChange}
+                  className="pl-12"
+                  min="10000"
+                  error={errors.amount}
+                />
+              </div>
+
+              <div className="relative">
+                <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <GlassInput
+                  type="text"
+                  name="bankName"
+                  label="Tên ngân hàng"
+                  placeholder="Ví dụ: Vietcombank, BIDV, Techcombank..."
+                  value={formData.bankName}
+                  onChange={handleChange}
+                  className="pl-12"
+                  error={errors.bankName}
+                />
+              </div>
+
+              <div className="relative">
+                <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <GlassInput
+                  type="text"
+                  name="accountNumber"
+                  label="Số tài khoản"
+                  placeholder="Nhập số tài khoản ngân hàng"
+                  value={formData.accountNumber}
+                  onChange={handleChange}
+                  className="pl-12"
+                  error={errors.accountNumber}
+                />
+              </div>
+
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <GlassInput
+                  type="text"
+                  name="accountName"
+                  label="Tên chủ tài khoản"
+                  placeholder="Tên chủ tài khoản (phải trùng với tên đăng ký)"
+                  value={formData.accountName}
+                  onChange={handleChange}
+                  className="pl-12"
+                  error={errors.accountName}
+                />
+              </div>
+
+              {errors.general && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="bg-red-100/80 border border-red-200 text-red-700 px-4 py-3 rounded-xl backdrop-blur-sm"
+                >
+                  {errors.general}
+                </motion.div>
+              )}
+
+              <GlassButton type="submit" disabled={loading} className="w-full">
+                {loading ? "Đang gửi yêu cầu..." : "Gửi yêu cầu rút gạch"}
+              </GlassButton>
+            </form>
+          </GlassCard>
+        </div>
+
+        {/* Withdraw History */}
+        <div>
+          <GlassCard>
+            <h3 className="text-lg font-semibold text-gray-800 mb-6">
+              Lịch sử rút gạch
+            </h3>
+
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {withdrawHistory.map((withdraw) => (
+                <motion.div
+                  key={withdraw._id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-3">
+                      {getStatusIcon(withdraw.status)}
+                      <span
+                        className={`text-sm font-medium px-3 py-1 rounded-full status-${withdraw.status}`}
+                      >
+                        {getStatusText(withdraw.status)}
+                      </span>
+                    </div>
+                    <span className="text-lg font-bold text-gray-800">
+                      {withdraw.amount.toLocaleString()} gạch
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
+                    <div>
+                      <span className="font-medium">Ngân hàng:</span>
+                      <p>{withdraw.bankInfo.bankName}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium">Số TK:</span>
+                      <p className="font-mono">
+                        {withdraw.bankInfo.accountNumber}
+                      </p>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="font-medium">Chủ TK:</span>
+                      <p>{withdraw.bankInfo.accountName}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="font-medium">Ngày tạo:</span>
+                      <p>
+                        {new Date(withdraw.createdAt).toLocaleString("vi-VN")}
+                      </p>
+                    </div>
+                  </div>
+
+                  {withdraw.notes && (
+                    <div className="mt-3 p-2 bg-yellow-50/20 rounded-lg">
+                      <span className="text-sm font-medium text-yellow-800">
+                        Ghi chú:
+                      </span>
+                      <p className="text-sm text-yellow-700">
+                        {withdraw.notes}
+                      </p>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+
+              {withdrawHistory.length === 0 && (
+                <div className="text-center py-8 text-gray-600">
+                  <CreditCard className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>Chưa có yêu cầu rút gạch nào</p>
+                </div>
+              )}
+            </div>
+          </GlassCard>
+        </div>
+      </div>
+    </div>
+  );
+}
