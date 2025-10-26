@@ -2,7 +2,9 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useApi } from '../../hooks/useApi';
+import { useModal } from '../../hooks/useModal';
 import GlassButton from '../ui/GlassButton';
+import Modal from '../ui/Modal';
 import { Upload, File, X, CheckCircle } from 'lucide-react';
 
 export default function FileUpload({ onFileProcessed }) {
@@ -11,6 +13,7 @@ export default function FileUpload({ onFileProcessed }) {
   const [processing, setProcessing] = useState(false);
   const fileInputRef = useRef(null);
   const { uploadFile } = useApi();
+  const { modal, showError, hideModal } = useModal();
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -39,12 +42,12 @@ export default function FileUpload({ onFileProcessed }) {
     const fileExtension = '.' + selectedFile.name.split('.').pop().toLowerCase();
     
     if (!allowedTypes.includes(selectedFile.type) && !allowedExtensions.includes(fileExtension)) {
-      alert('Chỉ hỗ trợ file .txt, .json, .xlsx, .xls');
+      showError('Lỗi file', 'Chỉ hỗ trợ file .txt, .json, .xlsx, .xls');
       return;
     }
 
     if (selectedFile.size > 10 * 1024 * 1024) {
-      alert('File không được vượt quá 10MB');
+      showError('Lỗi kích thước', 'File không được vượt quá 10MB');
       return;
     }
 
@@ -60,7 +63,7 @@ export default function FileUpload({ onFileProcessed }) {
       onFileProcessed(result.names, file.name);
       setFile(null);
     } catch (error) {
-      alert(error.message);
+      showError('Lỗi', error.message);
     } finally {
       setProcessing(false);
     }
@@ -142,6 +145,18 @@ export default function FileUpload({ onFileProcessed }) {
           </div>
         </motion.div>
       )}
+
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={hideModal}
+        title={modal.title}
+        message={modal.message}
+        type={modal.type}
+        onConfirm={modal.onConfirm}
+        showCancel={modal.showCancel}
+        confirmText={modal.confirmText}
+        cancelText={modal.cancelText}
+      />
     </div>
   );
 }

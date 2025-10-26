@@ -61,6 +61,8 @@ export default function Navigation() {
     { icon: Settings, label: "Quản lý yêu cầu", href: "/admin/requests" },
     { icon: User, label: "Quản lý users", href: "/admin/users" },
     { icon: Tag, label: "Quản lý danh mục", href: "/admin/categories" },
+    { icon: CreditCard, label: "Xác minh số dư", href: "/admin/balance-requests" },
+    { icon: CreditCard, label: "Quản lý rút tiền", href: "/admin/withdraws" },
   ];
 
   return (

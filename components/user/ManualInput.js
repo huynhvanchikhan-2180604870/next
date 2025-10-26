@@ -1,13 +1,16 @@
 'use client';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useModal } from '../../hooks/useModal';
 import GlassButton from '../ui/GlassButton';
+import Modal from '../ui/Modal';
 import { Plus, X, Users } from 'lucide-react';
 
 export default function ManualInput({ onNamesProcessed }) {
   const [names, setNames] = useState(['']);
   const [textInput, setTextInput] = useState('');
   const [inputMode, setInputMode] = useState('individual'); // 'individual' or 'bulk'
+  const { modal, showError, hideModal } = useModal();
 
   const addNameField = () => {
     setNames([...names, '']);
@@ -45,7 +48,7 @@ export default function ManualInput({ onNamesProcessed }) {
     }
 
     if (processedNames.length === 0) {
-      alert('Vui lòng nhập ít nhất một tên hợp lệ');
+      showError('Lỗi nhập liệu', 'Vui lòng nhập ít nhất một tên hợp lệ');
       return;
     }
 
@@ -156,6 +159,18 @@ export default function ManualInput({ onNamesProcessed }) {
           Xử lý danh sách
         </GlassButton>
       </div>
+
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={hideModal}
+        title={modal.title}
+        message={modal.message}
+        type={modal.type}
+        onConfirm={modal.onConfirm}
+        showCancel={modal.showCancel}
+        confirmText={modal.confirmText}
+        cancelText={modal.cancelText}
+      />
     </div>
   );
 }

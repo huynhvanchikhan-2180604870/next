@@ -2,8 +2,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useApi } from '../../../hooks/useApi';
+import { useModal } from '../../../hooks/useModal';
 import GlassCard from '../../../components/ui/GlassCard';
 import GlassButton from '../../../components/ui/GlassButton';
+import Modal from '../../../components/ui/Modal';
 import FileUpload from '../../../components/user/FileUpload';
 import ManualInput from '../../../components/user/ManualInput';
 import CategorySelector from '../../../components/user/CategorySelector';
@@ -26,6 +28,7 @@ export default function ManagePage() {
   const [requests, setRequests] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('');
+  const { modal, showSuccess, showError, hideModal } = useModal();
   
   const { post, get, loading } = useApi();
 
@@ -58,12 +61,12 @@ export default function ManagePage() {
 
   const handleSubmitRequest = async () => {
     if (processedNames.length === 0) {
-      alert('Vui lòng xử lý danh sách tên trước');
+      showError('Lỗi', 'Vui lòng xử lý danh sách tên trước');
       return;
     }
 
     if (!selectedCategory) {
-      alert('Vui lòng chọn danh mục');
+      showError('Lỗi', 'Vui lòng chọn danh mục');
       return;
     }
 
@@ -75,13 +78,15 @@ export default function ManagePage() {
         categoryId: selectedCategory
       });
       
-      alert('Gửi yêu cầu thành công!');
-      setProcessedNames([]);
-      setShowPreview(false);
-      setSelectedCategory('');
-      fetchRequests();
+      showSuccess('Thành công', 'Gửi yêu cầu thành công!', () => {
+        setProcessedNames([]);
+        setShowPreview(false);
+        setSelectedCategory('');
+        fetchRequests();
+        hideModal();
+      });
     } catch (error) {
-      alert(error.message);
+      showError('Lỗi', error.message);
     }
   };
 
@@ -358,6 +363,18 @@ export default function ManagePage() {
           </GlassCard>
         </div>
       </div>
+
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={hideModal}
+        title={modal.title}
+        message={modal.message}
+        type={modal.type}
+        onConfirm={modal.onConfirm}
+        showCancel={modal.showCancel}
+        confirmText={modal.confirmText}
+        cancelText={modal.cancelText}
+      />
     </div>
   );
 }

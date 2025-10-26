@@ -5,6 +5,8 @@ import GlassCard from '../../../components/ui/GlassCard';
 import GlassButton from '../../../components/ui/GlassButton';
 import GlassInput from '../../../components/ui/GlassInput';
 import DataTable from '../../../components/ui/DataTable';
+import Modal from '../../../components/ui/Modal';
+import { useModal } from '../../../hooks/useModal';
 import { Plus, Edit, Trash2, Eye, EyeOff, X } from 'lucide-react';
 
 export default function CategoriesPage() {
@@ -13,6 +15,7 @@ export default function CategoriesPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [formData, setFormData] = useState({ name: '', description: '' });
+  const { modal, showSuccess, showError, showConfirm, hideModal } = useModal();
 
   useEffect(() => {
     fetchCategories();
@@ -55,10 +58,13 @@ export default function CategoriesPage() {
       });
 
       if (response.ok) {
-        fetchCategories();
-        setShowForm(false);
-        setEditingCategory(null);
-        setFormData({ name: '', description: '' });
+        showSuccess('Thành công', editingCategory ? 'Cập nhật danh mục thành công!' : 'Tạo danh mục thành công!', () => {
+          fetchCategories();
+          setShowForm(false);
+          setEditingCategory(null);
+          setFormData({ name: '', description: '' });
+          hideModal();
+        });
       }
     } catch (error) {
       console.error('Error:', error);
@@ -81,27 +87,32 @@ export default function CategoriesPage() {
           isActive: !category.isActive
         })
       });
-      fetchCategories();
+      fetchCategories(); // Tự động refresh data
     } catch (error) {
       console.error('Error:', error);
     }
   };
 
   const deleteCategory = async (id) => {
-    if (confirm('Xác nhận xóa category này?')) {
-      try {
-        const token = localStorage.getItem('token');
-        await fetch(`/api/admin/categories?id=${id}`, { 
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        fetchCategories();
-      } catch (error) {
-        console.error('Error:', error);
+    showConfirm(
+      'Xác nhận xóa',
+      'Bạn có chắc chắn muốn xóa danh mục này?',
+      async () => {
+        try {
+          const token = localStorage.getItem('token');
+          await fetch(`/api/admin/categories?id=${id}`, { 
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          fetchCategories();
+          showSuccess('Thành công', 'Xóa danh mục thành công!');
+        } catch (error) {
+          showError('Lỗi', 'Không thể xóa danh mục. Vui lòng thử lại.');
+        }
       }
-    }
+    );
   };
 
   const columns = [
@@ -121,7 +132,7 @@ export default function CategoriesPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mt-10">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Quản lý Danh mục</h1>
         <GlassButton
@@ -217,6 +228,18 @@ export default function CategoriesPage() {
           )}
         />
       </GlassCard>
+
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={hideModal}
+        title={modal.title}
+        message={modal.message}
+        type={modal.type}
+        onConfirm={modal.onConfirm}
+        showCancel={modal.showCancel}
+        confirmText={modal.confirmText}
+        cancelText={modal.cancelText}
+      />
     </div>
   );
 }

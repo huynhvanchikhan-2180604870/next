@@ -29,7 +29,7 @@ const withdrawSchema = new Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'processing', 'completed', 'rejected'],
+    enum: ['pending', 'processing', 'completed', 'failed'],
     default: 'pending'
   },
   processedBy: {
@@ -40,6 +40,12 @@ const withdrawSchema = new Schema({
     type: Date
   },
   notes: {
+    type: String
+  },
+  proofImage: {
+    type: String
+  },
+  failureReason: {
     type: String
   },
   transactionId: {

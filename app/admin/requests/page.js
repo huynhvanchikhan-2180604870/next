@@ -65,7 +65,7 @@ export default function AdminRequestsPage() {
       
       alert('Cập nhật yêu cầu thành công!');
       setShowModal(false);
-      fetchRequests();
+      fetchRequests(); // Tự động refresh data
     } catch (error) {
       alert(error.message);
     } finally {

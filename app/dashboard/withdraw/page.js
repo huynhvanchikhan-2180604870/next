@@ -16,9 +16,13 @@ import GlassCard from "../../../components/ui/GlassCard";
 import GlassInput from "../../../components/ui/GlassInput";
 import { useAuth } from "../../../context/AuthContext";
 import { useApi } from "../../../hooks/useApi";
+import { useAutoRefresh } from "../../../hooks/useAutoRefresh";
+import { useModal } from "../../../hooks/useModal";
+import BalanceRequest from "../../../components/user/BalanceRequest";
+import Modal from "../../../components/ui/Modal";
 
 export default function WithdrawPage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { post, get, loading } = useApi();
   const [formData, setFormData] = useState({
     amount: "",
@@ -28,10 +32,31 @@ export default function WithdrawPage() {
   });
   const [errors, setErrors] = useState({});
   const [withdrawHistory, setWithdrawHistory] = useState([]);
+  const [balanceRequests, setBalanceRequests] = useState([]);
+  const [activeTab, setActiveTab] = useState('balance-request');
+  const { modal, showSuccess, showError, hideModal } = useModal();
 
   useEffect(() => {
     fetchWithdrawHistory();
+    fetchBalanceRequests();
+    if (refreshUser) refreshUser();
   }, []);
+
+  // Auto refresh mỗi 30 giây
+  useAutoRefresh(() => {
+    fetchWithdrawHistory();
+    fetchBalanceRequests();
+    if (refreshUser) refreshUser();
+  }, 30000);
+
+  const fetchBalanceRequests = async () => {
+    try {
+      const response = await get("/api/user/balance-request");
+      setBalanceRequests(response.requests || []);
+    } catch (error) {
+      console.error("Error fetching balance requests:", error);
+    }
+  };
 
   const fetchWithdrawHistory = async () => {
     try {
@@ -45,12 +70,12 @@ export default function WithdrawPage() {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.amount || formData.amount < 100) {
-      newErrors.amount = "Số gạch rút tối thiểu là 100 gạch";
+    if (!formData.amount || parseFloat(formData.amount) < 10000) {
+      newErrors.amount = "Số tiền rút tối thiểu là 10,000 VNĐ";
     }
 
-    if (formData.amount > user?.balance) {
-      newErrors.amount = "Số gạchch không đủ";
+    if (parseFloat(formData.amount) > (user?.balance || 0)) {
+      newErrors.amount = "Số dư không đủ";
     }
 
     if (!formData.bankName.trim()) {
@@ -88,16 +113,19 @@ export default function WithdrawPage() {
         },
       });
 
-      alert("Yêu cầu rút gạch đã được gửi thành công!");
-      setFormData({
-        amount: "",
-        bankName: "",
-        accountNumber: "",
-        accountName: "",
+      showSuccess('Thành công', 'Tạo lệnh rút tiền thành công!', () => {
+        setFormData({
+          amount: "",
+          bankName: "",
+          accountNumber: "",
+          accountName: "",
+        });
+        fetchWithdrawHistory();
+        if (refreshUser) refreshUser();
+        hideModal();
       });
-      fetchWithdrawHistory();
     } catch (error) {
-      setErrors({ general: error.message });
+      showError('Lỗi', error.message);
     }
   };
 
@@ -148,9 +176,35 @@ export default function WithdrawPage() {
         </p>
       </motion.div>
 
+      {/* Tabs */}
+      <div className="flex space-x-1 bg-white/10 backdrop-blur-sm rounded-2xl p-1 mb-8">
+        <button
+          onClick={() => setActiveTab('balance-request')}
+          className={`flex-1 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
+            activeTab === 'balance-request'
+              ? 'bg-white/20 text-white shadow-lg'
+              : 'text-white/70 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          Xác minh số dư
+        </button>
+        <button
+          onClick={() => setActiveTab('withdraw')}
+          className={`flex-1 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
+            activeTab === 'withdraw'
+              ? 'bg-white/20 text-white shadow-lg'
+              : 'text-white/70 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          Rút tiền
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Withdraw Form */}
         <div>
+          {activeTab === 'balance-request' ? (
+            <BalanceRequest onRequestSubmitted={fetchBalanceRequests} />
+          ) : (
           <GlassCard>
             <div className="flex items-center space-x-3 mb-6">
               <div className="p-3 bg-green-500/20 rounded-xl">
@@ -161,9 +215,9 @@ export default function WithdrawPage() {
                   Tạo yêu cầu rút gạch
                 </h2>
                 <p className="text-sm text-gray-600">
-                  Số gạchch hiện tại:{" "}
+                  Số dư hiện tại:{" "}
                   <span className="font-medium text-green-600">
-                    {user?.balance?.toLocaleString() || 0} gạch
+                    {user?.balance?.toLocaleString() || 0} VNĐ
                   </span>
                 </p>
               </div>
@@ -175,8 +229,8 @@ export default function WithdrawPage() {
                 <GlassInput
                   type="number"
                   name="amount"
-                  label="Số gạch rút"
-                  placeholder="Nhập số gạch muốn rút"
+                  label="Số tiền rút (VNĐ)"
+                  placeholder="Nhập số tiền muốn rút"
                   value={formData.amount}
                   onChange={handleChange}
                   className="pl-12"
@@ -238,21 +292,54 @@ export default function WithdrawPage() {
               )}
 
               <GlassButton type="submit" disabled={loading} className="w-full">
-                {loading ? "Đang gửi yêu cầu..." : "Gửi yêu cầu rút gạch"}
+                {loading ? "Đang gửi yêu cầu..." : "Gửi yêu cầu rút tiền"}
               </GlassButton>
             </form>
           </GlassCard>
+          )}
         </div>
 
-        {/* Withdraw History */}
+        {/* History */}
         <div>
           <GlassCard>
             <h3 className="text-lg font-semibold text-gray-800 mb-6">
-              Lịch sử rút gạch
+              {activeTab === 'balance-request' ? 'Lịch sử xác minh số dư' : 'Lịch sử rút tiền'}
             </h3>
 
             <div className="space-y-4 max-h-96 overflow-y-auto">
-              {withdrawHistory.map((withdraw) => (
+              {activeTab === 'balance-request' ? (
+                balanceRequests.map((request) => (
+                  <motion.div
+                    key={request._id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        {getStatusIcon(request.status)}
+                        <span className={`text-sm font-medium px-3 py-1 rounded-full status-${request.status}`}>
+                          {request.status === 'pending' ? 'Chờ xác minh' : 
+                           request.status === 'verified' ? 'Đã xác minh' : 'Từ chối'}
+                        </span>
+                      </div>
+                      <span className="text-lg font-bold text-gray-800">
+                        {request.requestedAmount.toLocaleString()} VNĐ
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      <p>Ngày tạo: {new Date(request.createdAt).toLocaleString('vi-VN')}</p>
+                      {request.adminNotes && (
+                        <div className="mt-2 p-2 bg-yellow-50/20 rounded-lg">
+                          <span className="font-medium">Ghi chú:</span>
+                          <p>{request.adminNotes}</p>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                ))
+              ) : (
+                withdrawHistory.map((withdraw) => (
                 <motion.div
                   key={withdraw._id}
                   initial={{ opacity: 0, y: 10 }}
@@ -269,7 +356,7 @@ export default function WithdrawPage() {
                       </span>
                     </div>
                     <span className="text-lg font-bold text-gray-800">
-                      {withdraw.amount.toLocaleString()} gạch
+                      {withdraw.amount.toLocaleString()} VNĐ
                     </span>
                   </div>
 
@@ -307,18 +394,31 @@ export default function WithdrawPage() {
                     </div>
                   )}
                 </motion.div>
-              ))}
+              ))
+              )}
 
-              {withdrawHistory.length === 0 && (
+              {(activeTab === 'balance-request' ? balanceRequests.length === 0 : withdrawHistory.length === 0) && (
                 <div className="text-center py-8 text-gray-600">
                   <CreditCard className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>Chưa có yêu cầu rút gạch nào</p>
+                  <p>{activeTab === 'balance-request' ? 'Chưa có yêu cầu xác minh nào' : 'Chưa có lệnh rút tiền nào'}</p>
                 </div>
               )}
             </div>
           </GlassCard>
         </div>
       </div>
+
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={hideModal}
+        title={modal.title}
+        message={modal.message}
+        type={modal.type}
+        onConfirm={modal.onConfirm}
+        showCancel={modal.showCancel}
+        confirmText={modal.confirmText}
+        cancelText={modal.cancelText}
+      />
     </div>
   );
 }

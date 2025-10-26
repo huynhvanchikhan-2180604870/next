@@ -36,13 +36,13 @@ export default function CategorySelector({ selectedCategory, onCategoryChange })
   }
 
   return (
-    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/30">
+    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/30 relative z-10">
       <label className="block text-sm font-medium text-gray-700 mb-2">
         <Tag className="w-4 h-4 inline mr-1" />
         Chọn danh mục
       </label>
       
-      <div className="relative">
+      <div className="relative z-20">
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="w-full glass-input flex items-center justify-between"
@@ -60,7 +60,7 @@ export default function CategorySelector({ selectedCategory, onCategoryChange })
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="absolute z-10 w-full mt-1 bg-white/90 backdrop-blur-sm border border-white/30 rounded-xl shadow-lg max-h-60 overflow-y-auto"
+            className="absolute z-[9999] w-full mt-1 bg-white/90 backdrop-blur-sm border border-white/30 rounded-xl shadow-lg max-h-60 overflow-y-auto"
           >
             {categories.map((category) => (
               <button

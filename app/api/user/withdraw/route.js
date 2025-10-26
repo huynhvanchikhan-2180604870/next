@@ -3,6 +3,7 @@ import { authenticateUser } from "../../../../lib/auth";
 import connectDB from "../../../../lib/db";
 import User from "../../../../models/User";
 import Withdraw from "../../../../models/Withdraw";
+import { sendWithdrawRequestToAdmin } from "../../../../lib/email";
 
 export async function POST(request) {
   try {
@@ -36,8 +37,14 @@ export async function POST(request) {
 
     const user = await User.findById(auth.user._id);
     if (user.balance < amount) {
-      return NextResponse.json({ error: "Số gạch không đủ" }, { status: 400 });
+      return NextResponse.json({ error: "Số dư không đủ để rút tiền" }, { status: 400 });
     }
+
+    // Trừ tiền từ balance ngay lập tức
+    await User.findByIdAndUpdate(
+      auth.user._id,
+      { $inc: { balance: -amount } }
+    );
 
     const withdraw = new Withdraw({
       userId: auth.user._id,
@@ -47,8 +54,16 @@ export async function POST(request) {
 
     await withdraw.save();
 
+    // Gửi email cho admin
+    await sendWithdrawRequestToAdmin(
+      user.fullName,
+      amount,
+      bankInfo,
+      withdraw._id
+    );
+
     return NextResponse.json({
-      message: "Yêu cầu Lấy gạch về đã được gửi",
+      message: "Tạo lệnh rút tiền thành công. Tiền đã được trừ khỏi số dư.",
       withdrawId: withdraw._id,
     });
   } catch (error) {

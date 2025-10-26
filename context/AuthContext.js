@@ -91,6 +91,26 @@ export function AuthProvider({ children }) {
     dispatch({ type: 'UPDATE_USER', payload: userData });
   };
 
+  const refreshUser = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch('/api/user/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        updateUser(data.user);
+      }
+    } catch (error) {
+      console.error('Error refreshing user:', error);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -98,6 +118,7 @@ export function AuthProvider({ children }) {
         login,
         logout,
         updateUser,
+        refreshUser,
       }}
     >
       {children}
