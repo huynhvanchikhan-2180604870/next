@@ -9,6 +9,7 @@ import {
   Settings,
   User,
   Wrench,
+  Tag,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -59,6 +60,7 @@ export default function Navigation() {
   const adminMenuItems = [
     { icon: Settings, label: "Quản lý yêu cầu", href: "/admin/requests" },
     { icon: User, label: "Quản lý users", href: "/admin/users" },
+    { icon: Tag, label: "Quản lý danh mục", href: "/admin/categories" },
   ];
 
   return (

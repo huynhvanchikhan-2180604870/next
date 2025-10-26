@@ -25,6 +25,7 @@ export async function GET(request) {
     const requests = await Request.find(filter)
       .populate('userId', 'fullName email')
       .populate('processedBy', 'fullName')
+      .populate('categoryId', 'name')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit);

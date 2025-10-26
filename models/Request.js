@@ -8,6 +8,11 @@ const requestSchema = new Schema({
     ref: 'User',
     required: true
   },
+  categoryId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Category',
+    required: true
+  },
   names: [{
     index: {
       type: Number,

@@ -6,6 +6,7 @@ import GlassCard from '../../../components/ui/GlassCard';
 import GlassButton from '../../../components/ui/GlassButton';
 import FileUpload from '../../../components/user/FileUpload';
 import ManualInput from '../../../components/user/ManualInput';
+import CategorySelector from '../../../components/user/CategorySelector';
 import { 
   Upload, 
   Edit, 
@@ -24,6 +25,7 @@ export default function ManagePage() {
   const [fileName, setFileName] = useState('');
   const [requests, setRequests] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('');
   
   const { post, get, loading } = useApi();
 
@@ -60,16 +62,23 @@ export default function ManagePage() {
       return;
     }
 
+    if (!selectedCategory) {
+      alert('Vui lòng chọn danh mục');
+      return;
+    }
+
     try {
       await post('/api/user/requests', {
         names: processedNames,
         submissionType,
-        fileName
+        fileName,
+        categoryId: selectedCategory
       });
       
       alert('Gửi yêu cầu thành công!');
       setProcessedNames([]);
       setShowPreview(false);
+      setSelectedCategory('');
       fetchRequests();
     } catch (error) {
       alert(error.message);
@@ -208,6 +217,18 @@ export default function ManagePage() {
                             </span>
                           </div>
                         </div>
+                        
+                        {request.categoryId && (
+                          <div className="mt-2">
+                            <span className="text-gray-600 text-sm">Danh mục:</span>
+                            <span className="ml-2 font-medium text-sm bg-primary-100 text-primary-800 px-2 py-1 rounded">
+                              {request.categoryId.name}
+                            </span>
+                          </div>
+                        )}
+                        
+                        <div className="hidden">
+                        </div>
 
                         {request.status === 'completed' && request.names?.length > 0 && (
                           <div className="mt-4 p-3 bg-green-50/20 rounded-lg">
@@ -270,7 +291,12 @@ export default function ManagePage() {
         </div>
 
         {/* Preview Panel */}
-        <div>
+        <div className="space-y-6">
+          <CategorySelector 
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+          />
+          
           <GlassCard>
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center space-x-2">
               <Eye className="w-5 h-5" />

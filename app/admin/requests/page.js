@@ -13,7 +13,8 @@ import {
   Eye, 
   User,
   Calendar,
-  FileText
+  FileText,
+  X
 } from 'lucide-react';
 
 export default function AdminRequestsPage() {
@@ -123,6 +124,15 @@ export default function AdminRequestsPage() {
       )
     },
     {
+      header: 'Danh mục',
+      accessor: 'categoryId',
+      render: (row) => (
+        <span className="text-sm bg-primary-100 text-primary-800 px-2 py-1 rounded">
+          {row.categoryId?.name || 'Không có'}
+        </span>
+      )
+    },
+    {
       header: 'Loại',
       accessor: 'submissionType',
       render: (row) => (
@@ -202,7 +212,7 @@ export default function AdminRequestsPage() {
                   onClick={() => setShowModal(false)}
                   className="p-2 hover:bg-white/20 rounded-lg transition-colors text-gray-600 hover:text-gray-800"
                 >
-                  ✕
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
@@ -218,6 +228,12 @@ export default function AdminRequestsPage() {
                     <div className="flex justify-between">
                       <span className="text-gray-600">Email:</span>
                       <span className="font-medium">{selectedRequest.userId?.email}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Danh mục:</span>
+                      <span className="font-medium bg-primary-100 text-primary-800 px-2 py-1 rounded text-xs">
+                        {selectedRequest.categoryId?.name || 'Không có'}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Loại:</span>

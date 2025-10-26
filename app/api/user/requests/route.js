@@ -13,7 +13,7 @@ export async function POST(request) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    const { names, submissionType, fileName } = await request.json();
+    const { names, submissionType, fileName, categoryId } = await request.json();
 
     if (!names || !Array.isArray(names) || names.length === 0) {
       return NextResponse.json(
@@ -22,10 +22,18 @@ export async function POST(request) {
       );
     }
 
+    if (!categoryId) {
+      return NextResponse.json(
+        { error: 'Vui lòng chọn danh mục' },
+        { status: 400 }
+      );
+    }
+
     await connectDB();
 
     const newRequest = new Request({
       userId: auth.user._id,
+      categoryId,
       names: names.map((name, index) => ({
         index: typeof name === 'object' ? name.index : index + 1,
         fullName: typeof name === 'object' ? name.fullName : name.trim()
@@ -65,7 +73,8 @@ export async function GET(request) {
 
     const requests = await Request.find({ userId: auth.user._id })
       .sort({ createdAt: -1 })
-      .populate('processedBy', 'fullName');
+      .populate('processedBy', 'fullName')
+      .populate('categoryId', 'name');
 
     return NextResponse.json({ requests });
 
